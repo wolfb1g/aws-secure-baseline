@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/wolfb1g/aws-secure-baseline/actions/workflows/ci.yml/badge.svg)](https://github.com/wolfb1g/aws-secure-baseline/actions)
 
+[![CI](https://github.com/wolfb1g/aws-secure-baseline/actions/workflows/ci.yml/badge.svg)](https://github.com/wolfb1g/aws-secure-baseline/actions)
+
 [![CI](https://github.com/wolfb1g/aws-secure-baseline/actions/workflows/ci.yml/badge.svg)](https://github.com/wolfb1g/aws-secure-baseline/actions/workflows/ci.yml)
 
 A Terraform security baseline for an AWS account, built as a Cloud Security portfolio project. The goal is to demonstrate repeatable security controls, least-privilege design, and verifiable infrastructure changes through small, reviewable PRs.
