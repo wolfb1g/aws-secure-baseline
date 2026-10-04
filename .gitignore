@@ -1,0 +1,25 @@
+# Terraform state and downloaded providers
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Local variable values; safe examples belong in version control
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# Logs, credentials, and local overrides
+crash.log
+crash.*.log
+.env
+.env.*
+*.pem
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+.DS_Store
+
+# Keep .terraform.lock.hcl in version control for reproducible provider installs.
