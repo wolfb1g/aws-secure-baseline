@@ -1,0 +1,4 @@
+# Replace placeholders in a local terraform.tfvars file when deployment is authorized.
+# Static validation uses the variable defaults and does not load this example.
+aws_region  = "<aws-region>"
+environment = "<environment>"
