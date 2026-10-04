@@ -1,0 +1,2 @@
+# Security findings must fail local checks and CI; no checks are skipped.
+soft-fail: false
