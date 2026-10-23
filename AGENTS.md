@@ -43,5 +43,9 @@ This file is the single source of truth for how humans and AI agents work in thi
 
 ## Multi-agent work
 
-- Claude coordinates and reviews. Grok may be delegated implementation work with `delegate_task`.
+- Work is split between two roles:
+  - **Coordinator**: plans the work, delegates implementation, reviews results, and owns commits and PRs.
+  - **Implementer**: carries out delegated implementation work and returns the changes to the coordinator.
 - The coordinator reviews every delegated diff before committing.
+- Implementers follow every rule in this file, the same as the coordinator.
+- Example setup: Claude acts as the coordinator and delegates implementation to Grok through a delegation tool such as `delegate_task`. Any agent or tool that fills these roles works the same way.
