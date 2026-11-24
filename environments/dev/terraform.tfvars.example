@@ -20,3 +20,6 @@ guardduty_enable_ebs_malware_protection = false
 guardduty_enable_rds_login_events       = false
 guardduty_enable_lambda_network_logs    = false
 guardduty_enable_runtime_monitoring     = false
+
+# CIS AWS Foundations Benchmark standard version in Security Hub (1.2.0, 1.4.0, 3.0.0, or 5.0.0).
+securityhub_cis_version = "5.0.0"
