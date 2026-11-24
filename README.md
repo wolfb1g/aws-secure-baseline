@@ -12,7 +12,7 @@ A Terraform security baseline for an AWS account, built as a Cloud Security port
 | GuardDuty | Detect suspicious activity and potential threats | Planned |
 | Security Hub + CIS AWS Foundations | Aggregate findings and assess the account against the CIS AWS Foundations standard | Planned |
 | Account-level S3 Block Public Access | Prevent public access to S3 at the account boundary | Implemented |
-| IAM password policy | Establish requirements for IAM user passwords | Planned |
+| IAM password policy | Establish requirements for IAM user passwords | Implemented |
 | Reusable secure S3 bucket module | Provide consistent bucket encryption, access restrictions, and secure defaults | Implemented (module) |
 | AWS Budget | Track spending against an explicit budget and alert on thresholds | Implemented |
 
@@ -32,6 +32,7 @@ A Terraform security baseline for an AWS account, built as a Cloud Security port
 │       ├── variables.tf            # Region, environment, and control inputs
 │       ├── main.tf                 # Per-control environment layout notes
 │       ├── budget.tf               # Monthly AWS cost budget and threshold alerts
+│       ├── iam_password_policy.tf  # CIS-aligned IAM account password policy
 │       ├── s3_public_access.tf     # Account-level S3 Block Public Access settings
 │       └── terraform.tfvars.example
 ├── .gitignore
@@ -78,7 +79,7 @@ The example variables file contains placeholders only. Static `validate` runs wi
 The [CI workflow](.github/workflows/ci.yml) runs on pull requests and on pushes to `main`. Three independent jobs fail on formatting errors, invalid Terraform, security findings, or detected secrets:
 
 - **Terraform:** Terraform `1.16.4` checks formatting recursively, then initializes with `-backend=false -input=false` and validates every directory containing `.tf` files under `environments/` and `modules/`. Downloaded `.terraform/` directories are excluded; future roots and modules are discovered automatically.
-- **Checkov:** Checkov `3.3.20` scans the whole repository for Terraform and GitHub Actions findings, with soft failure explicitly disabled. Any resource-specific exceptions require inline justifications and documentation in the relevant module README.
+- **Checkov:** Checkov `3.3.20` scans the whole repository for Terraform and GitHub Actions findings, with soft failure explicitly disabled. Any resource-specific exceptions require inline justifications and documentation in the relevant README.
 - **Gitleaks:** Gitleaks `8.30.1` scans the complete Git history with redacted output. Its release archive is verified against the release's SHA256 checksums before extraction; no Gitleaks action license is required.
 
 Every action is pinned to a full commit SHA with its release tag recorded inline. Jobs have timeouts, the workflow grants only `contents: read`, checkout does not persist credentials, and newer runs cancel earlier runs for the same ref. The workflow needs no AWS credentials and does not authenticate to or call AWS.
@@ -101,8 +102,16 @@ gitleaks dir --redact .
 
 Use Bash for the loop. The additional directory scan checks uncommitted files before a commit; CI's Git scan covers committed history. Passing CI verifies these static checks, not deployed AWS controls or account compliance.
 
+## Checkov exceptions
+
+Environment-level checks skipped inline (no global skips are configured; module-level skips are documented in [modules/secure-s3-bucket/README.md](modules/secure-s3-bucket/README.md)):
+
+| Check | Resource | Justification |
+| --- | --- | --- |
+| `CKV_AWS_9` | `aws_iam_account_password_policy.this` (`environments/dev/iam_password_policy.tf`) | NIST SP 800-63B Section 5.1.1.2 recommends against arbitrary periodic password expiration without evidence of compromise; CIS AWS Foundations v3.0.0+ removed forced 90-day rotation. |
+
 ## Roadmap and current status
 
-The repository foundation is in place: provider configuration, validated inputs, default tags, a dependency lock file, and contributor rules. The monthly AWS Budget control (`environments/dev/budget.tf`) and Account-level S3 Block Public Access (`environments/dev/s3_public_access.tf`) are implemented. The [secure S3 bucket module](modules/secure-s3-bucket/README.md) defines a reusable control that is not yet wired into `environments/dev`, and the remaining security controls are not yet implemented. Static checks do not establish that an AWS account meets any security standard.
+The repository foundation is in place: provider configuration, validated inputs, default tags, a dependency lock file, and contributor rules. The monthly AWS Budget control (`environments/dev/budget.tf`), Account-level S3 Block Public Access (`environments/dev/s3_public_access.tf`), and IAM password policy (`environments/dev/iam_password_policy.tf`) are implemented. The [secure S3 bucket module](modules/secure-s3-bucket/README.md) defines a reusable control that is not yet wired into `environments/dev`, and the remaining security controls are not yet implemented. Static checks do not establish that an AWS account meets any security standard.
 
 Credential-free CI is implemented for formatting, validation, Checkov, and Gitleaks, with GitHub Actions pinned to full commit SHAs. Next, implement the remaining planned controls one per draft PR, opening each PR only after the previous one is merged (no stacking), with test instructions and security considerations in every description.
