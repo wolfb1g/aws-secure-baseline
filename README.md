@@ -9,7 +9,7 @@ A Terraform security baseline for an AWS account, built as a Cloud Security port
 | Control | Purpose | Status |
 | --- | --- | --- |
 | CloudTrail | Record account activity for auditing and investigation | Implemented |
-| GuardDuty | Detect suspicious activity and potential threats | Planned |
+| GuardDuty | Detect suspicious activity and potential threats | Implemented |
 | Security Hub + CIS AWS Foundations | Aggregate findings and assess the account against the CIS AWS Foundations standard | Planned |
 | Account-level S3 Block Public Access | Prevent public access to S3 at the account boundary | Implemented |
 | IAM password policy | Establish requirements for IAM user passwords | Implemented |
@@ -34,6 +34,7 @@ A Terraform security baseline for an AWS account, built as a Cloud Security port
 │       ├── main.tf                 # Per-control environment layout notes
 │       ├── budget.tf               # Monthly AWS cost budget and threshold alerts
 │       ├── cloudtrail.tf           # Multi-region CloudTrail and KMS-encrypted log bucket
+│       ├── guardduty.tf            # GuardDuty detector, S3 protection, and optional feature toggles
 │       ├── iam_password_policy.tf  # CIS-aligned IAM account password policy
 │       ├── s3_public_access.tf     # Account-level S3 Block Public Access settings
 │       └── terraform.tfvars.example
@@ -113,9 +114,10 @@ Environment-level checks skipped inline (no global skips are configured; module-
 | `CKV_AWS_9` | `aws_iam_account_password_policy.this` (`environments/dev/iam_password_policy.tf`) | NIST SP 800-63B Section 5.1.1.2 recommends against arbitrary periodic password expiration without evidence of compromise; CIS AWS Foundations v3.0.0+ removed forced 90-day rotation. |
 | `CKV_AWS_252` | `aws_cloudtrail.this` (`environments/dev/cloudtrail.tf`) | SNS topic notifications for CloudTrail log delivery are out of scope per `docs/PROJECT_BRIEF.md` Section 3. |
 | `CKV2_AWS_10` | `aws_cloudtrail.this` (`environments/dev/cloudtrail.tf`) | CloudWatch Logs integration is out of scope per `docs/PROJECT_BRIEF.md` Section 3 to avoid ongoing log ingestion and storage costs; management events are delivered to a KMS-encrypted S3 bucket with log file validation. |
+| `CKV2_AWS_3` | `aws_guardduty_detector.this` (`environments/dev/guardduty.tf`) | AWS Organizations GuardDuty configuration (`aws_guardduty_organization_configuration`) is out of scope because this baseline targets a single standalone AWS account per `docs/PROJECT_BRIEF.md` Sections 1 and 3. |
 
 ## Roadmap and current status
 
-The repository foundation is in place: provider configuration, validated inputs, default tags, a dependency lock file, and contributor rules. The monthly AWS Budget control (`environments/dev/budget.tf`), Account-level S3 Block Public Access (`environments/dev/s3_public_access.tf`), IAM password policy (`environments/dev/iam_password_policy.tf`), and multi-region CloudTrail (`environments/dev/cloudtrail.tf`) are implemented, with the [secure S3 bucket module](modules/secure-s3-bucket/README.md) wired into `environments/dev` for KMS-encrypted CloudTrail log storage. The remaining planned security controls are not yet implemented. Static checks do not establish that an AWS account meets any security standard.
+The repository foundation is in place: provider configuration, validated inputs, default tags, a dependency lock file, and contributor rules. The monthly AWS Budget control (`environments/dev/budget.tf`), Account-level S3 Block Public Access (`environments/dev/s3_public_access.tf`), IAM password policy (`environments/dev/iam_password_policy.tf`), multi-region CloudTrail (`environments/dev/cloudtrail.tf`), and Amazon GuardDuty (`environments/dev/guardduty.tf`) are implemented, with the [secure S3 bucket module](modules/secure-s3-bucket/README.md) wired into `environments/dev` for KMS-encrypted CloudTrail log storage. The remaining planned security controls are not yet implemented. Static checks do not establish that an AWS account meets any security standard.
 
 Credential-free CI is implemented for formatting, validation, Checkov, and Gitleaks, with GitHub Actions pinned to full commit SHAs. Next, implement the remaining planned controls one per draft PR, opening each PR only after the previous one is merged (no stacking), with test instructions and security considerations in every description.
