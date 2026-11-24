@@ -11,7 +11,7 @@ A Terraform security baseline for an AWS account, built as a Cloud Security port
 | CloudTrail | Record account activity for auditing and investigation | Planned |
 | GuardDuty | Detect suspicious activity and potential threats | Planned |
 | Security Hub + CIS AWS Foundations | Aggregate findings and assess the account against the CIS AWS Foundations standard | Planned |
-| Account-level S3 Block Public Access | Prevent public access to S3 at the account boundary | Planned |
+| Account-level S3 Block Public Access | Prevent public access to S3 at the account boundary | Implemented |
 | IAM password policy | Establish requirements for IAM user passwords | Planned |
 | Reusable secure S3 bucket module | Provide consistent bucket encryption, access restrictions, and secure defaults | Implemented (module) |
 | AWS Budget | Track spending against an explicit budget and alert on thresholds | Implemented |
@@ -32,6 +32,7 @@ A Terraform security baseline for an AWS account, built as a Cloud Security port
 │       ├── variables.tf            # Region, environment, and control inputs
 │       ├── main.tf                 # Per-control environment layout notes
 │       ├── budget.tf               # Monthly AWS cost budget and threshold alerts
+│       ├── s3_public_access.tf     # Account-level S3 Block Public Access settings
 │       └── terraform.tfvars.example
 ├── .gitignore
 ├── AGENTS.md                       # Contributor and agent rules
@@ -102,6 +103,6 @@ Use Bash for the loop. The additional directory scan checks uncommitted files be
 
 ## Roadmap and current status
 
-The repository foundation is in place: provider configuration, validated inputs, default tags, a dependency lock file, and contributor rules. The monthly AWS Budget control is implemented in `environments/dev/budget.tf`. The [secure S3 bucket module](modules/secure-s3-bucket/README.md) defines a reusable control that is not yet wired into `environments/dev`, and the remaining security controls are not yet implemented. Static checks do not establish that an AWS account meets any security standard.
+The repository foundation is in place: provider configuration, validated inputs, default tags, a dependency lock file, and contributor rules. The monthly AWS Budget control (`environments/dev/budget.tf`) and Account-level S3 Block Public Access (`environments/dev/s3_public_access.tf`) are implemented. The [secure S3 bucket module](modules/secure-s3-bucket/README.md) defines a reusable control that is not yet wired into `environments/dev`, and the remaining security controls are not yet implemented. Static checks do not establish that an AWS account meets any security standard.
 
 Credential-free CI is implemented for formatting, validation, Checkov, and Gitleaks, with GitHub Actions pinned to full commit SHAs. Next, implement the remaining planned controls one per draft PR, opening each PR only after the previous one is merged (no stacking), with test instructions and security considerations in every description.
