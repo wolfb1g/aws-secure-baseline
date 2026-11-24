@@ -1,6 +1,6 @@
 # Secure S3 bucket module
 
-Creates a private general-purpose S3 bucket with a customer-managed KMS key, versioning, access logging, transport restrictions, and lifecycle cleanup. The module inherits its AWS provider from the caller and is not wired into `environments/dev`.
+Creates a private general-purpose S3 bucket with a customer-managed KMS key, versioning, access logging, transport restrictions, and lifecycle cleanup. The module inherits its AWS provider from the caller and is wired into `environments/dev` for security log storage (starting with CloudTrail).
 
 ## Requirements and usage
 
@@ -55,6 +55,8 @@ References identify related controls, not proof of deployed compliance. See [AWS
 | `kms_key_additional_principal_arns` | `list(string)` | `[]` | Explicit IAM user/role ARNs allowed to use this key through regional S3 for this bucket. |
 | `abort_incomplete_multipart_upload_days` | `number` | `7` | Positive integer days before unfinished multipart uploads are aborted. |
 | `noncurrent_version_expiration_days` | `number` | `90` | Nonnegative integer days before permanent deletion of noncurrent versions; `0` or `null` disables expiration. |
+| `bucket_policy_statements` | `list(object({...}))` | `[]` | Additional least-privilege statements appended to the bucket policy; `Allow` statements disallow wildcard (`*`) principals. |
+| `kms_key_policy_statements` | `list(object({...}))` | `[]` | Additional least-privilege statements appended to the KMS key policy (`resources = ["*"]`); `Allow` statements disallow wildcard (`*`) principals. |
 
 ## Outputs
 
@@ -70,11 +72,11 @@ References identify related controls, not proof of deployed compliance. See [AWS
 
 ## KMS and access behavior
 
-The account root principal enables delegation of key administration through IAM. A separate statement enables account IAM principals with appropriate identity permissions to use the key through regional S3, constrained by `kms:ViaService`, `kms:CallerAccount`, and this bucket's encryption context. Additional principals receive the same S3 and encryption-context constraints, without an owner-account condition so explicit cross-account principals remain possible. These grants do not grant S3 access. See [KMS condition keys](https://docs.aws.amazon.com/kms/latest/developerguide/conditions-kms.html).
+The account root principal enables delegation of key administration through IAM. A separate statement enables account IAM principals with appropriate identity permissions to use the key through regional S3, constrained by `kms:ViaService`, `kms:CallerAccount`, and this bucket's encryption context. Additional principals in `kms_key_additional_principal_arns` receive the same S3 and encryption-context constraints, without an owner-account condition so explicit cross-account principals remain possible. Callers such as AWS services that encrypt directly with KMS (for example, CloudTrail or AWS Config) or IAM principals decrypting service-encrypted logs can add scoped key-policy grants through `kms_key_policy_statements`, which sets `resources = ["*"]` on the attached key and rejects wildcard (`*`) principals on `Allow` statements. These KMS grants do not grant S3 access. See [KMS condition keys](https://docs.aws.amazon.com/kms/latest/developerguide/conditions-kms.html).
 
-Both the bucket ARN (S3 Bucket Keys) and object ARNs are allowed as encryption contexts. Key policy resource `"*"` refers to the attached key, not every key in the account. Administrators can change the policy; these conditions constrain the configured use grants rather than providing immutable isolation from administrators.
+Both the bucket ARN (S3 Bucket Keys) and object ARNs are allowed as encryption contexts on the built-in S3 statements. Key policy resource `"*"` refers to the attached key, not every key in the account. Administrators can change the policy; these conditions constrain the configured use grants rather than providing immutable isolation from administrators.
 
-Default encryption applies when clients do not select encryption themselves. This module does not deny uploads that explicitly choose another supported encryption method or key. Its bucket policy grants no application access and denies insecure transport and TLS versions below 1.2. Applications need their own least-privilege S3 and KMS permissions. Callers must not attach a competing bucket policy resource to this bucket.
+Default encryption applies when clients do not select encryption themselves. This module does not deny uploads that explicitly choose another supported encryption method or key. By default (`bucket_policy_statements = []`), its bucket policy grants no application or service access and always denies insecure transport and TLS versions below 1.2. Callers can append least-privilege bucket policy statements (for example, service delivery grants constrained with `aws:SourceArn`) through `bucket_policy_statements` rather than attaching a competing `aws_s3_bucket_policy` resource, which S3 does not support alongside `aws_s3_bucket_policy.this`. Applications and IAM principals also need their own least-privilege S3 and KMS permissions.
 
 ## Access-log destination requirements
 
@@ -110,11 +112,14 @@ Do not run `plan`, `apply`, `destroy`, or AWS API calls in the development envir
 
 ## Checkov exceptions
 
-The following checks are skipped inline on `aws_s3_bucket.this`; no global skips are configured:
+The following checks are skipped inline; no global skips are configured:
 
-| Check | Justification |
-| --- | --- |
-| `CKV_AWS_144` | Cross-region replication requires a caller-owned destination, replication role, and recovery requirements beyond this single-bucket module. |
-| `CKV2_AWS_62` | Event notifications require workload-specific consumers and permissions; the caller owns notification configuration outside this storage baseline. |
+| Check | Resource | Justification |
+| --- | --- | --- |
+| `CKV_AWS_144` | `aws_s3_bucket.this` | Cross-region replication requires a caller-owned destination, replication role, and recovery requirements beyond this single-bucket module. |
+| `CKV2_AWS_62` | `aws_s3_bucket.this` | Event notifications require workload-specific consumers and permissions; the caller owns notification configuration outside this storage baseline. |
+| `CKV_AWS_109` | `data.aws_iam_policy_document.kms` | Checkov's Cloudsplaining scanner evaluates `aws_iam_policy_document` as an identity policy and ignores `Principal`; key administration in this KMS resource policy is restricted to the owning account root principal on the attached key. |
+| `CKV_AWS_111` | `data.aws_iam_policy_document.kms` | Cloudsplaining evaluates `aws_iam_policy_document` as an identity policy and ignores `Principal`; key administration is restricted to the owning account root principal and usage grants require service, account, or encryption-context conditions. |
+| `CKV_AWS_356` | `data.aws_iam_policy_document.kms` | AWS KMS key policies require `Resource = "*"` to denote the attached KMS key; statements apply only to `aws_kms_key.this`. |
 
-Logging, encryption, public access, versioning, lifecycle, and KMS policy checks are not skipped. Checkov must include its graph policies: the local Homebrew `3.3.20` package was missing those policy files, so validation also used the complete PyPI distribution with `uv tool run --from checkov==3.3.20 checkov -d . --framework terraform,github_actions --quiet --compact`.
+Logging, encryption, public access, versioning, lifecycle, and KMS resource checks (including rotation and wildcard-principal checks on `aws_kms_key.this`) are not skipped. Checkov must include its graph policies: the local Homebrew `3.3.20` package was missing those policy files, so validation also used the complete PyPI distribution with `uv tool run --from checkov==3.3.20 checkov -d . --framework terraform,github_actions --quiet --compact`.

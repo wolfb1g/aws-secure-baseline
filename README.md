@@ -8,12 +8,12 @@ A Terraform security baseline for an AWS account, built as a Cloud Security port
 
 | Control | Purpose | Status |
 | --- | --- | --- |
-| CloudTrail | Record account activity for auditing and investigation | Planned |
+| CloudTrail | Record account activity for auditing and investigation | Implemented |
 | GuardDuty | Detect suspicious activity and potential threats | Planned |
 | Security Hub + CIS AWS Foundations | Aggregate findings and assess the account against the CIS AWS Foundations standard | Planned |
 | Account-level S3 Block Public Access | Prevent public access to S3 at the account boundary | Implemented |
 | IAM password policy | Establish requirements for IAM user passwords | Implemented |
-| Reusable secure S3 bucket module | Provide consistent bucket encryption, access restrictions, and secure defaults | Implemented (module) |
+| Reusable secure S3 bucket module | Provide consistent bucket encryption, access restrictions, and secure defaults | Implemented |
 | AWS Budget | Track spending against an explicit budget and alert on thresholds | Implemented |
 
 ## Repository layout
@@ -29,9 +29,11 @@ A Terraform security baseline for an AWS account, built as a Cloud Security port
 │   └── dev/
 │       ├── .terraform.lock.hcl     # Committed provider version and checksums
 │       ├── providers.tf            # Terraform, provider, backend, and tags
+│       ├── data.tf                 # Current account, partition, and Region lookups
 │       ├── variables.tf            # Region, environment, and control inputs
 │       ├── main.tf                 # Per-control environment layout notes
 │       ├── budget.tf               # Monthly AWS cost budget and threshold alerts
+│       ├── cloudtrail.tf           # Multi-region CloudTrail and KMS-encrypted log bucket
 │       ├── iam_password_policy.tf  # CIS-aligned IAM account password policy
 │       ├── s3_public_access.tf     # Account-level S3 Block Public Access settings
 │       └── terraform.tfvars.example
@@ -63,7 +65,7 @@ Initialization downloads providers without initializing a state backend. Validat
 
 `plan` and `apply` require AWS credentials and are out of scope for CI. Contributor and agent rules prohibit running `plan`, `apply`, or `destroy` in the development environment and prohibit calling AWS APIs.
 
-The example variables file contains placeholders only. Static `validate` runs without a `.tfvars` file (using defaults where defined, such as `us-east-1`, `dev`, and `budget_monthly_limit_usd = 10`); deployment-only inputs such as `budget_alert_email` have no default and must be supplied in a gitignored local `terraform.tfvars` file when deployment is authorized.
+The example variables file contains placeholders only. Static `validate` runs without a `.tfvars` file (using defaults where defined, such as `us-east-1`, `dev`, and `budget_monthly_limit_usd = 10`); deployment-only inputs such as `budget_alert_email`, `access_log_bucket_name`, and `cloudtrail_bucket_name` have no default and must be supplied in a gitignored local `terraform.tfvars` file when deployment is authorized. Prepare the separate server access-log destination bucket (`access_log_bucket_name`) beforehand as described in [modules/secure-s3-bucket/README.md](modules/secure-s3-bucket/README.md).
 
 ## Security principles
 
@@ -109,9 +111,11 @@ Environment-level checks skipped inline (no global skips are configured; module-
 | Check | Resource | Justification |
 | --- | --- | --- |
 | `CKV_AWS_9` | `aws_iam_account_password_policy.this` (`environments/dev/iam_password_policy.tf`) | NIST SP 800-63B Section 5.1.1.2 recommends against arbitrary periodic password expiration without evidence of compromise; CIS AWS Foundations v3.0.0+ removed forced 90-day rotation. |
+| `CKV_AWS_252` | `aws_cloudtrail.this` (`environments/dev/cloudtrail.tf`) | SNS topic notifications for CloudTrail log delivery are out of scope per `docs/PROJECT_BRIEF.md` Section 3. |
+| `CKV2_AWS_10` | `aws_cloudtrail.this` (`environments/dev/cloudtrail.tf`) | CloudWatch Logs integration is out of scope per `docs/PROJECT_BRIEF.md` Section 3 to avoid ongoing log ingestion and storage costs; management events are delivered to a KMS-encrypted S3 bucket with log file validation. |
 
 ## Roadmap and current status
 
-The repository foundation is in place: provider configuration, validated inputs, default tags, a dependency lock file, and contributor rules. The monthly AWS Budget control (`environments/dev/budget.tf`), Account-level S3 Block Public Access (`environments/dev/s3_public_access.tf`), and IAM password policy (`environments/dev/iam_password_policy.tf`) are implemented. The [secure S3 bucket module](modules/secure-s3-bucket/README.md) defines a reusable control that is not yet wired into `environments/dev`, and the remaining security controls are not yet implemented. Static checks do not establish that an AWS account meets any security standard.
+The repository foundation is in place: provider configuration, validated inputs, default tags, a dependency lock file, and contributor rules. The monthly AWS Budget control (`environments/dev/budget.tf`), Account-level S3 Block Public Access (`environments/dev/s3_public_access.tf`), IAM password policy (`environments/dev/iam_password_policy.tf`), and multi-region CloudTrail (`environments/dev/cloudtrail.tf`) are implemented, with the [secure S3 bucket module](modules/secure-s3-bucket/README.md) wired into `environments/dev` for KMS-encrypted CloudTrail log storage. The remaining planned security controls are not yet implemented. Static checks do not establish that an AWS account meets any security standard.
 
 Credential-free CI is implemented for formatting, validation, Checkov, and Gitleaks, with GitHub Actions pinned to full commit SHAs. Next, implement the remaining planned controls one per draft PR, opening each PR only after the previous one is merged (no stacking), with test instructions and security considerations in every description.

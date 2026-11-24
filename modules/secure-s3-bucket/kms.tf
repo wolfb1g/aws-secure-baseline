@@ -18,6 +18,9 @@ locals {
 }
 
 data "aws_iam_policy_document" "kms" {
+  #checkov:skip=CKV_AWS_109:Cloudsplaining evaluates aws_iam_policy_document as an identity policy and ignores Principal; this KMS key policy restricts key administration to the owning account root principal on this key only.
+  #checkov:skip=CKV_AWS_111:Cloudsplaining evaluates aws_iam_policy_document as an identity policy and ignores Principal; key administration is scoped to the owning account root principal and key usage statements require service, account, or encryption-context conditions.
+  #checkov:skip=CKV_AWS_356:AWS KMS key policies require Resource = "*" to refer to the attached KMS key; statements apply only to aws_kms_key.this.
   statement {
     sid    = "AllowAccountKeyAdministration"
     effect = "Allow"
@@ -99,6 +102,36 @@ data "aws_iam_policy_document" "kms" {
         test     = "ArnLike"
         variable = "kms:EncryptionContext:aws:s3:arn"
         values   = [aws_s3_bucket.this.arn, "${aws_s3_bucket.this.arn}/*"]
+      }
+    }
+  }
+
+  dynamic "statement" {
+    for_each = var.kms_key_policy_statements
+
+    content {
+      sid       = statement.value.sid
+      effect    = statement.value.effect
+      actions   = statement.value.actions
+      resources = ["*"]
+
+      dynamic "principals" {
+        for_each = statement.value.principals
+
+        content {
+          type        = principals.value.type
+          identifiers = principals.value.identifiers
+        }
+      }
+
+      dynamic "condition" {
+        for_each = statement.value.conditions
+
+        content {
+          test     = condition.value.test
+          variable = condition.value.variable
+          values   = condition.value.values
+        }
       }
     }
   }
