@@ -14,7 +14,7 @@ A Terraform security baseline for an AWS account, built as a Cloud Security port
 | Account-level S3 Block Public Access | Prevent public access to S3 at the account boundary | Planned |
 | IAM password policy | Establish requirements for IAM user passwords | Planned |
 | Reusable secure S3 bucket module | Provide consistent bucket encryption, access restrictions, and secure defaults | Implemented (module) |
-| AWS Budget | Track spending against an explicit budget and alert on thresholds | Planned |
+| AWS Budget | Track spending against an explicit budget and alert on thresholds | Implemented |
 
 ## Repository layout
 
@@ -29,8 +29,9 @@ A Terraform security baseline for an AWS account, built as a Cloud Security port
 │   └── dev/
 │       ├── .terraform.lock.hcl     # Committed provider version and checksums
 │       ├── providers.tf            # Terraform, provider, backend, and tags
-│       ├── variables.tf            # Region and environment inputs
-│       ├── main.tf                 # Future control wiring; no resources yet
+│       ├── variables.tf            # Region, environment, and control inputs
+│       ├── main.tf                 # Per-control environment layout notes
+│       ├── budget.tf               # Monthly AWS cost budget and threshold alerts
 │       └── terraform.tfvars.example
 ├── .gitignore
 ├── AGENTS.md                       # Contributor and agent rules
@@ -60,7 +61,7 @@ Initialization downloads providers without initializing a state backend. Validat
 
 `plan` and `apply` require AWS credentials and are out of scope for CI. Contributor and agent rules prohibit running `plan`, `apply`, or `destroy` in the development environment and prohibit calling AWS APIs.
 
-The example variables file contains placeholders only. Static checks use the defaults (`us-east-1` and `dev`); deployment-specific values belong in an ignored local `terraform.tfvars` file when deployment is authorized.
+The example variables file contains placeholders only. Static `validate` runs without a `.tfvars` file (using defaults where defined, such as `us-east-1`, `dev`, and `budget_monthly_limit_usd = 10`); deployment-only inputs such as `budget_alert_email` have no default and must be supplied in a gitignored local `terraform.tfvars` file when deployment is authorized.
 
 ## Security principles
 
@@ -101,6 +102,6 @@ Use Bash for the loop. The additional directory scan checks uncommitted files be
 
 ## Roadmap and current status
 
-The repository foundation is in place: provider configuration, validated inputs, default tags, a dependency lock file, and contributor rules. The [secure S3 bucket module](modules/secure-s3-bucket/README.md) defines a reusable control but is not wired into `environments/dev`; no AWS resources have been deployed. Static checks do not establish that an AWS account meets any security standard.
+The repository foundation is in place: provider configuration, validated inputs, default tags, a dependency lock file, and contributor rules. The monthly AWS Budget control is implemented in `environments/dev/budget.tf`. The [secure S3 bucket module](modules/secure-s3-bucket/README.md) defines a reusable control that is not yet wired into `environments/dev`, and the remaining security controls are not yet implemented. Static checks do not establish that an AWS account meets any security standard.
 
-Credential-free CI is implemented for formatting, validation, Checkov, and Gitleaks, with GitHub Actions pinned to full commit SHAs. Next, implement the planned controls one per draft PR, opening each PR only after the previous one is merged (no stacking), with test instructions and security considerations in every description.
+Credential-free CI is implemented for formatting, validation, Checkov, and Gitleaks, with GitHub Actions pinned to full commit SHAs. Next, implement the remaining planned controls one per draft PR, opening each PR only after the previous one is merged (no stacking), with test instructions and security considerations in every description.
