@@ -1,13 +1,17 @@
 # Replace placeholders in a local terraform.tfvars file when deployment is authorized.
 # Static validation does not load this example; required deployment inputs such as
-# budget_alert_email, access_log_bucket_name, and cloudtrail_bucket_name must be
-# supplied in a gitignored local terraform.tfvars file.
+# budget_alert_email, access_log_bucket_name, cloudtrail_bucket_name, and
+# config_bucket_name must be supplied in a gitignored local terraform.tfvars file.
 aws_region               = "<aws-region>"
 environment              = "<environment>"
 budget_monthly_limit_usd = 10
 budget_alert_email       = "<budget-alert-email>"
 access_log_bucket_name   = "<access-log-bucket-name>"
 cloudtrail_bucket_name   = "<cloudtrail-logs-bucket-name>"
+config_bucket_name       = "<config-logs-bucket-name>"
+
+# Set to false if the account already has AWSServiceRoleForConfig from prior AWS Config usage.
+config_create_service_linked_role = true
 
 # Optional GuardDuty protection plans default to false (explicitly DISABLED) to
 # avoid post-30-day-trial charges; S3 Protection is enabled unconditionally.
