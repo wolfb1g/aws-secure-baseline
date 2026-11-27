@@ -1,3 +1,5 @@
+# CreateDetector enables every optional protection plan except Runtime Monitoring when
+# no features are specified, so each paid plan is declared explicitly below.
 resource "aws_guardduty_detector" "this" {
   #checkov:skip=CKV2_AWS_3:AWS Organizations GuardDuty configuration (aws_guardduty_organization_configuration) is out of scope because this baseline targets a single standalone AWS account per docs/PROJECT_BRIEF.md Sections 1 and 3.
   enable                       = true
@@ -38,4 +40,10 @@ resource "aws_guardduty_detector_feature" "runtime_monitoring" {
   detector_id = aws_guardduty_detector.this.id
   name        = "RUNTIME_MONITORING"
   status      = var.guardduty_enable_runtime_monitoring ? "ENABLED" : "DISABLED"
+}
+
+resource "aws_guardduty_detector_feature" "ai_protection" {
+  detector_id = aws_guardduty_detector.this.id
+  name        = "AI_PROTECTION"
+  status      = var.guardduty_enable_ai_protection ? "ENABLED" : "DISABLED"
 }
