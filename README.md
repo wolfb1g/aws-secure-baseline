@@ -1,9 +1,5 @@
 # aws-secure-baseline
 
-[![CI](https://github.com/wolfb1g/aws-secure-baseline/actions/workflows/ci.yml/badge.svg)](https://github.com/wolfb1g/aws-secure-baseline/actions)
-
-[![CI](https://github.com/wolfb1g/aws-secure-baseline/actions/workflows/ci.yml/badge.svg)](https://github.com/wolfb1g/aws-secure-baseline/actions)
-
 [![CI](https://github.com/wolfb1g/aws-secure-baseline/actions/workflows/ci.yml/badge.svg)](https://github.com/wolfb1g/aws-secure-baseline/actions/workflows/ci.yml)
 
 A Terraform security baseline for an AWS account, built as a Cloud Security portfolio project. The goal is to demonstrate repeatable security controls, least-privilege design, and verifiable infrastructure changes through small, reviewable PRs.
@@ -25,6 +21,8 @@ A Terraform security baseline for an AWS account, built as a Cloud Security port
 ```text
 .
 ├── .github/workflows/ci.yml         # Credential-free validation and security checks
+├── docs/
+│   └── PROJECT_BRIEF.md             # Project scope, roadmap, and definition of done
 ├── modules/
 │   └── secure-s3-bucket/            # Private, KMS-encrypted S3 bucket with secure defaults
 ├── environments/
@@ -75,7 +73,7 @@ The example variables file contains placeholders only. Static checks use the def
 
 ## Continuous integration
 
-The [CI workflow](.github/workflows/ci.yml) runs on pull requests targeting any branch, including stacked PRs, and on pushes to `main`. Three independent jobs fail on formatting errors, invalid Terraform, security findings, or detected secrets:
+The [CI workflow](.github/workflows/ci.yml) runs on pull requests and on pushes to `main`. Three independent jobs fail on formatting errors, invalid Terraform, security findings, or detected secrets:
 
 - **Terraform:** Terraform `1.16.4` checks formatting recursively, then initializes with `-backend=false -input=false` and validates every directory containing `.tf` files under `environments/` and `modules/`. Downloaded `.terraform/` directories are excluded; future roots and modules are discovered automatically.
 - **Checkov:** Checkov `3.3.20` scans the whole repository for Terraform and GitHub Actions findings, with soft failure explicitly disabled. Any resource-specific exceptions require inline justifications and documentation in the relevant module README.
@@ -105,4 +103,4 @@ Use Bash for the loop. The additional directory scan checks uncommitted files be
 
 The repository foundation is in place: provider configuration, validated inputs, default tags, a dependency lock file, and contributor rules. The [secure S3 bucket module](modules/secure-s3-bucket/README.md) defines a reusable control but is not wired into `environments/dev`; no AWS resources have been deployed. Static checks do not establish that an AWS account meets any security standard.
 
-Credential-free CI is implemented for formatting, validation, Checkov, and Gitleaks, with GitHub Actions pinned to full commit SHAs. Next, implement the planned controls one per draft PR, stacking dependent PRs, with test instructions and security considerations in every description.
+Credential-free CI is implemented for formatting, validation, Checkov, and Gitleaks, with GitHub Actions pinned to full commit SHAs. Next, implement the planned controls one per draft PR, opening each PR only after the previous one is merged (no stacking), with test instructions and security considerations in every description.
