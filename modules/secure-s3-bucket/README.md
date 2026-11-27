@@ -1,6 +1,6 @@
 # Secure S3 bucket module
 
-Creates a private general-purpose S3 bucket with a customer-managed KMS key, versioning, access logging, transport restrictions, and lifecycle cleanup. The module inherits its AWS provider from the caller and is wired into `environments/dev` for security log storage (starting with CloudTrail).
+Creates a private general-purpose S3 bucket with a customer-managed KMS key, versioning, access logging, transport restrictions, and lifecycle cleanup. The module inherits its AWS provider from the caller and is wired into `environments/dev` for security log storage: the CloudTrail log bucket (`module.cloudtrail_logs`) and the AWS Config delivery bucket (`module.config_logs`).
 
 ## Requirements and usage
 
