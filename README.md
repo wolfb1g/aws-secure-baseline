@@ -110,7 +110,7 @@ Environment-level checks skipped inline (no global skips are configured; module-
 
 | Check | Resource | Justification |
 | --- | --- | --- |
-| `CKV_AWS_9` | `aws_iam_account_password_policy.this` (`environments/dev/iam_password_policy.tf`) | NIST SP 800-63B Section 5.1.1.2 recommends against arbitrary periodic password expiration without evidence of compromise; CIS AWS Foundations v3.0.0+ removed forced 90-day rotation. |
+| `CKV_AWS_9` | `aws_iam_account_password_policy.this` (`environments/dev/iam_password_policy.tf`) | Forced periodic expiration is intentionally omitted. NIST SP 800-63B-4 (July 2025) Section 3.1.1.2 states that verifiers SHALL NOT require periodic password changes and SHALL force a change only when there is evidence of compromise. The CIS AWS Foundations Benchmark v5.0.0 has no password-expiration recommendation; the 90-day check (Security Hub control IAM.17) maps only to CIS v1.2.0. |
 | `CKV_AWS_252` | `aws_cloudtrail.this` (`environments/dev/cloudtrail.tf`) | SNS topic notifications for CloudTrail log delivery are out of scope per `docs/PROJECT_BRIEF.md` Section 3. |
 | `CKV2_AWS_10` | `aws_cloudtrail.this` (`environments/dev/cloudtrail.tf`) | CloudWatch Logs integration is out of scope per `docs/PROJECT_BRIEF.md` Section 3 to avoid ongoing log ingestion and storage costs; management events are delivered to a KMS-encrypted S3 bucket with log file validation. |
 
