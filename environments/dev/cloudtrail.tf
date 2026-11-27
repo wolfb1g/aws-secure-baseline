@@ -99,6 +99,26 @@ module "cloudtrail_logs" {
       ]
     },
     {
+      # The module enables S3 Bucket Keys. With a Bucket Key on the destination bucket,
+      # CloudTrail requires kms:Decrypt to create or update a trail that uses SSE-KMS.
+      sid    = "AllowCloudTrailDecrypt"
+      effect = "Allow"
+      principals = [
+        {
+          type        = "Service"
+          identifiers = ["cloudtrail.amazonaws.com"]
+        }
+      ]
+      actions = ["kms:Decrypt"]
+      conditions = [
+        {
+          test     = "StringEquals"
+          variable = "aws:SourceArn"
+          values   = [local.cloudtrail_arn]
+        }
+      ]
+    },
+    {
       sid    = "AllowAccountDecryptCloudTrailLogs"
       effect = "Allow"
       principals = [
@@ -107,7 +127,9 @@ module "cloudtrail_logs" {
           identifiers = ["arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:root"]
         }
       ]
-      actions = ["kms:Decrypt", "kms:DescribeKey"]
+      # kms:DescribeKey is omitted: it carries no encryption context, so the
+      # aws:cloudtrail:arn condition below could never match it.
+      actions = ["kms:Decrypt"]
       conditions = [
         {
           test     = "StringEquals"

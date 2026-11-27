@@ -163,6 +163,13 @@ variable "guardduty_enable_runtime_monitoring" {
   nullable    = false
 }
 
+variable "guardduty_enable_ai_protection" {
+  description = "Whether to enable GuardDuty AI Protection (analysis of CloudTrail data events from AI workloads). Disabled by default because new detectors otherwise enable it automatically and it is billed per GB analyzed after the 30-day free trial."
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
 variable "securityhub_cis_version" {
   description = "Version of the CIS AWS Foundations Benchmark standard enabled in AWS Security Hub; defaults to 5.0.0, the latest version Security Hub supports."
   type        = string
