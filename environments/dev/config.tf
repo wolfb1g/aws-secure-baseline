@@ -60,6 +60,8 @@ module "config_logs" {
     }
   ]
 
+  # With the service-linked role, AWS Config delivers to S3 and uses this key as the
+  # config.amazonaws.com service principal; the role itself needs no key access.
   kms_key_policy_statements = [
     {
       sid    = "AllowAWSConfigServiceKMS"
@@ -70,30 +72,12 @@ module "config_logs" {
           identifiers = ["config.amazonaws.com"]
         }
       ]
-      actions = ["kms:Decrypt", "kms:GenerateDataKey*", "kms:DescribeKey"]
+      actions = ["kms:Decrypt", "kms:GenerateDataKey"]
       conditions = [
         {
           test     = "StringEquals"
           variable = "aws:SourceAccount"
           values   = [data.aws_caller_identity.current.account_id]
-        }
-      ]
-    },
-    {
-      sid    = "AllowAWSConfigServiceLinkedRoleKMS"
-      effect = "Allow"
-      principals = [
-        {
-          type        = "AWS"
-          identifiers = [local.config_slr_arn]
-        }
-      ]
-      actions = ["kms:Decrypt", "kms:GenerateDataKey*", "kms:DescribeKey"]
-      conditions = [
-        {
-          test     = "ArnLike"
-          variable = "kms:EncryptionContext:aws:s3:arn"
-          values   = [local.config_bucket_arn, "${local.config_bucket_arn}/*"]
         }
       ]
     }
