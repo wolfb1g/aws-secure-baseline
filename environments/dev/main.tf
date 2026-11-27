@@ -1,2 +1,2 @@
-# Security controls and reusable modules will be wired here in later PRs.
-# This repository foundation intentionally declares no resources.
+# Security controls for the dev environment are organized into per-control .tf files
+# (for example, budget.tf) and call reusable modules under ../../modules where appropriate.
