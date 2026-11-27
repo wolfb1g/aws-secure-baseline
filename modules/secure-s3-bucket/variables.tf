@@ -111,3 +111,110 @@ variable "noncurrent_version_expiration_days" {
     error_message = "Noncurrent version expiration must be null or a nonnegative integer number of days."
   }
 }
+
+variable "bucket_policy_statements" {
+  description = "Additional least-privilege statements appended to the bucket policy; Allow statements must not use wildcard (*) principals."
+  type = list(object({
+    sid    = string
+    effect = optional(string, "Allow")
+    principals = list(object({
+      type        = string
+      identifiers = list(string)
+    }))
+    actions   = list(string)
+    resources = list(string)
+    conditions = optional(list(object({
+      test     = string
+      variable = string
+      values   = list(string)
+    })), [])
+  }))
+  default  = []
+  nullable = false
+
+  validation {
+    condition = alltrue([
+      for s in var.bucket_policy_statements : (
+        trimspace(s.sid) != "" &&
+        contains(["Allow", "Deny"], s.effect) &&
+        length(s.principals) > 0 &&
+        alltrue([
+          for p in s.principals :
+          trimspace(p.type) != "" && length(p.identifiers) > 0 && alltrue([for id in p.identifiers : trimspace(id) != ""])
+        ]) &&
+        length(s.actions) > 0 &&
+        alltrue([for a in s.actions : trimspace(a) != ""]) &&
+        length(s.resources) > 0 &&
+        alltrue([for r in s.resources : trimspace(r) != ""]) &&
+        alltrue([
+          for c in s.conditions :
+          trimspace(c.test) != "" && trimspace(c.variable) != "" && length(c.values) > 0
+        ])
+      )
+    ])
+    error_message = "Every bucket policy statement must specify a non-empty sid, an effect of Allow or Deny, non-empty principals, actions, and resources, and valid conditions."
+  }
+
+  validation {
+    condition = alltrue([
+      for s in var.bucket_policy_statements :
+      s.effect != "Allow" || alltrue([
+        for p in s.principals :
+        trimspace(p.type) != "*" && alltrue([for id in p.identifiers : trimspace(id) != "*"])
+      ])
+    ])
+    error_message = "Allow bucket policy statements must not use wildcard (*) principals."
+  }
+}
+
+variable "kms_key_policy_statements" {
+  description = "Additional least-privilege statements appended to the customer-managed KMS key policy with resources = [\"*\"]; Allow statements must not use wildcard (*) principals."
+  type = list(object({
+    sid    = string
+    effect = optional(string, "Allow")
+    principals = list(object({
+      type        = string
+      identifiers = list(string)
+    }))
+    actions = list(string)
+    conditions = optional(list(object({
+      test     = string
+      variable = string
+      values   = list(string)
+    })), [])
+  }))
+  default  = []
+  nullable = false
+
+  validation {
+    condition = alltrue([
+      for s in var.kms_key_policy_statements : (
+        trimspace(s.sid) != "" &&
+        contains(["Allow", "Deny"], s.effect) &&
+        length(s.principals) > 0 &&
+        alltrue([
+          for p in s.principals :
+          trimspace(p.type) != "" && length(p.identifiers) > 0 && alltrue([for id in p.identifiers : trimspace(id) != ""])
+        ]) &&
+        length(s.actions) > 0 &&
+        alltrue([for a in s.actions : trimspace(a) != ""]) &&
+        alltrue([
+          for c in s.conditions :
+          trimspace(c.test) != "" && trimspace(c.variable) != "" && length(c.values) > 0
+        ])
+      )
+    ])
+    error_message = "Every KMS key policy statement must specify a non-empty sid, an effect of Allow or Deny, non-empty principals and actions, and valid conditions."
+  }
+
+  validation {
+    condition = alltrue([
+      for s in var.kms_key_policy_statements :
+      s.effect != "Allow" || alltrue([
+        for p in s.principals :
+        trimspace(p.type) != "*" && alltrue([for id in p.identifiers : trimspace(id) != "*"])
+      ])
+    ])
+    error_message = "Allow KMS key policy statements must not use wildcard (*) principals."
+  }
+}
