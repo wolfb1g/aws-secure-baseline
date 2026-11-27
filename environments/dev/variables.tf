@@ -169,3 +169,15 @@ variable "guardduty_enable_ai_protection" {
   default     = false
   nullable    = false
 }
+
+variable "securityhub_cis_version" {
+  description = "Version of the CIS AWS Foundations Benchmark standard enabled in AWS Security Hub; defaults to 5.0.0, the latest version Security Hub supports."
+  type        = string
+  default     = "5.0.0"
+  nullable    = false
+
+  validation {
+    condition     = contains(["1.2.0", "1.4.0", "3.0.0", "5.0.0"], var.securityhub_cis_version)
+    error_message = "The CIS AWS Foundations Benchmark version must be one of 1.2.0, 1.4.0, 3.0.0, or 5.0.0."
+  }
+}
