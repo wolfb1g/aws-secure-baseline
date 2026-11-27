@@ -88,3 +88,45 @@ variable "cloudtrail_bucket_name" {
     error_message = "The CloudTrail logs bucket must differ from the access-log destination bucket to avoid recursive logging."
   }
 }
+
+variable "guardduty_enable_eks_audit_logs" {
+  description = "Whether to enable GuardDuty EKS Audit Log Monitoring. Disabled by default to avoid per-event Kubernetes audit log analysis charges after the 30-day free trial."
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
+variable "guardduty_enable_ebs_malware_protection" {
+  description = "Whether to enable GuardDuty Malware Protection for EC2 (EBS volume scanning on suspicious activity). Disabled by default to avoid per-GB EBS scan charges after the 30-day free trial."
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
+variable "guardduty_enable_rds_login_events" {
+  description = "Whether to enable GuardDuty RDS Protection for Aurora and RDS login activity. Disabled by default to avoid vCPU-based RDS protection charges after the 30-day free trial."
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
+variable "guardduty_enable_lambda_network_logs" {
+  description = "Whether to enable GuardDuty Lambda Protection for serverless network activity logs. Disabled by default to avoid VPC flow and Lambda network log volume charges after the 30-day free trial."
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
+variable "guardduty_enable_runtime_monitoring" {
+  description = "Whether to enable GuardDuty Runtime Monitoring across supported compute workloads (ECS, EKS, and EC2). Disabled by default to avoid vCPU- and memory-based runtime monitoring charges after the 30-day free trial."
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
+variable "guardduty_enable_ai_protection" {
+  description = "Whether to enable GuardDuty AI Protection (analysis of CloudTrail data events from AI workloads). Disabled by default because new detectors otherwise enable it automatically and it is billed per GB analyzed after the 30-day free trial."
+  type        = bool
+  default     = false
+  nullable    = false
+}
