@@ -89,6 +89,45 @@ variable "cloudtrail_bucket_name" {
   }
 }
 
+variable "config_bucket_name" {
+  description = "Globally unique general-purpose S3 bucket name for AWS Config configuration history and snapshots in the shared namespace. Supply this in a gitignored terraform.tfvars file at deployment time."
+  type        = string
+  nullable    = false
+
+  validation {
+    condition = (
+      can(regex("^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$", var.config_bucket_name)) &&
+      !strcontains(var.config_bucket_name, "..") &&
+      !can(regex("^[0-9]{1,3}(\\.[0-9]{1,3}){3}$", var.config_bucket_name)) &&
+      !can(regex("^(xn--|sthree-|amzn-s3-demo-)", var.config_bucket_name)) &&
+      !can(regex("(-s3alias|--ol-s3|\\.mrap|--x-s3|--table-s3|-an)$", var.config_bucket_name))
+    )
+    error_message = "Use 3-63 lowercase letters, digits, dots, or hyphens, beginning and ending with a letter or digit, without adjacent dots, an IP address, or an AWS-reserved prefix/suffix."
+  }
+
+  validation {
+    condition     = !strcontains(var.config_bucket_name, ".")
+    error_message = "The AWS Config bucket name must not contain dots because the secure-s3-bucket module creates an exact alias/<bucket_name> KMS alias."
+  }
+
+  validation {
+    condition     = var.config_bucket_name != var.access_log_bucket_name
+    error_message = "The AWS Config logs bucket must differ from the access-log destination bucket to avoid recursive logging."
+  }
+
+  validation {
+    condition     = var.config_bucket_name != var.cloudtrail_bucket_name
+    error_message = "The AWS Config logs bucket must differ from the CloudTrail logs bucket so each control writes to its own dedicated bucket."
+  }
+}
+
+variable "config_create_service_linked_role" {
+  description = "Whether Terraform creates the account-wide AWSServiceRoleForConfig service-linked role for AWS Config. Enabled by default; set to false if the account already has AWSServiceRoleForConfig from prior AWS Config usage."
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
 variable "guardduty_enable_eks_audit_logs" {
   description = "Whether to enable GuardDuty EKS Audit Log Monitoring. Disabled by default to avoid per-event Kubernetes audit log analysis charges after the 30-day free trial."
   type        = bool
